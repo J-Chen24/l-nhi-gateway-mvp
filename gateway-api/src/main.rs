@@ -2,6 +2,7 @@ mod db;
 mod handlers;
 mod models;
 mod routes;
+mod services;
 
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};

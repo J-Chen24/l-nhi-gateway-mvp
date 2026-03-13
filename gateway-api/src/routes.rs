@@ -4,7 +4,7 @@ use axum::{
 };
 
 use crate::db::AppState;
-use crate::handlers::{agent, transfer, wallet};
+use crate::handlers::{agent, audit, transfer, wallet};
 
 pub fn create_router(state: AppState) -> Router {
     Router::new()
@@ -14,6 +14,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/wallets", post(wallet::create_wallet))
         .route("/wallets/:id", get(wallet::get_wallet))
         .route("/transfer", post(transfer::transfer))
+        .route("/audit-logs", get(audit::list_audit_logs))
         .with_state(state)
 }
 

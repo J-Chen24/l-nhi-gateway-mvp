@@ -51,3 +51,25 @@ pub struct WalletRow {
     pub owner_name: String,
     pub balance: i64,
 }
+
+#[derive(Debug, Serialize)]
+pub struct AuditLog {
+    pub id: Uuid,
+    pub wallet_id: Option<Uuid>,
+    pub action: String,
+    pub amount: Option<i64>,
+    pub status: String,
+    pub reason: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(FromRow)]
+pub struct AuditLogRow {
+    pub id: Uuid,
+    pub wallet_id: Option<Uuid>,
+    pub action: String,
+    pub amount: Option<i64>,
+    pub status: String,
+    pub reason: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}

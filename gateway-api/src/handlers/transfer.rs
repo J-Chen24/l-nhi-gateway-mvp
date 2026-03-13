@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::db::AppState;
 use crate::models::{TransferRequest, WalletRow};
+use crate::services::policy;
 
 pub async fn transfer(
     State(state): State<AppState>,
@@ -101,6 +102,23 @@ pub async fn transfer(
         return Err((
             StatusCode::NOT_FOUND,
             "destination wallet not found".to_string(),
+        ));
+    }
+
+    // Policy evaluation (after validation, before database writes)
+    if let Err(reason) = policy::evaluate_transfer(req.amount) {
+        tx.rollback().await.ok();
+        write_audit_rejected(
+            &state.pool,
+            req.from_wallet_id,
+            "transfer",
+            req.amount,
+            reason,
+        )
+        .await;
+        return Err((
+            StatusCode::BAD_REQUEST,
+            reason.to_string(),
         ));
     }
 
