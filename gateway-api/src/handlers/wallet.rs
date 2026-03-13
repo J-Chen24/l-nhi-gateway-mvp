@@ -13,21 +13,29 @@ pub async fn create_wallet(
     Json(req): Json<CreateWalletRequest>,
 ) -> Result<Json<Wallet>, (StatusCode, String)> {
     if req.balance < 0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "balance must be >= 0".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "balance must be >= 0".to_string()));
+    }
+
+    let agent_exists = sqlx::query_scalar::<_, i32>("SELECT 1 FROM agents WHERE id = $1")
+        .bind(req.agent_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if agent_exists.is_none() {
+        return Err((StatusCode::NOT_FOUND, "agent not found".to_string()));
     }
 
     let id = Uuid::new_v4();
 
     sqlx::query(
         r#"
-        INSERT INTO wallets (id, owner_name, balance)
-        VALUES ($1, $2, $3)
+        INSERT INTO wallets (id, agent_id, owner_name, balance)
+        VALUES ($1, $2, $3, $4)
         "#,
     )
     .bind(id)
+    .bind(req.agent_id)
     .bind(&req.owner_name)
     .bind(req.balance)
     .execute(&state.pool)
@@ -51,6 +59,7 @@ pub async fn create_wallet(
 
     Ok(Json(Wallet {
         id,
+        agent_id: req.agent_id,
         owner_name: req.owner_name,
         balance: req.balance,
     }))
@@ -61,7 +70,7 @@ pub async fn get_wallet(
     Path(id): Path<Uuid>,
 ) -> Result<Json<Wallet>, (StatusCode, String)> {
     let row = sqlx::query_as::<_, WalletRow>(
-        "SELECT id, owner_name, balance FROM wallets WHERE id = $1",
+        "SELECT id, agent_id, owner_name, balance FROM wallets WHERE id = $1",
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -71,6 +80,7 @@ pub async fn get_wallet(
     match row {
         Some(r) => Ok(Json(Wallet {
             id: r.id,
+            agent_id: r.agent_id,
             owner_name: r.owner_name,
             balance: r.balance,
         })),

@@ -1,8 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -51,7 +47,7 @@ pub async fn transfer(
 
     // Fetch source wallet
     let from_row = sqlx::query_as::<_, WalletRow>(
-        "SELECT id, owner_name, balance FROM wallets WHERE id = $1",
+        "SELECT id, agent_id, owner_name, balance FROM wallets WHERE id = $1",
     )
     .bind(req.from_wallet_id)
     .fetch_optional(&mut *tx)
@@ -68,10 +64,7 @@ pub async fn transfer(
             "source wallet not found",
         )
         .await;
-        return Err((
-            StatusCode::NOT_FOUND,
-            "source wallet not found".to_string(),
-        ));
+        return Err((StatusCode::NOT_FOUND, "source wallet not found".to_string()));
     }
 
     let from_balance = from_row.as_ref().unwrap().balance;
@@ -85,10 +78,7 @@ pub async fn transfer(
             "insufficient balance",
         )
         .await;
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "insufficient balance".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "insufficient balance".to_string()));
     }
 
     // Check destination exists

@@ -24,11 +24,7 @@ async fn main() -> anyhow::Result<()> {
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::info!("L-NHI Gateway listening on {}", addr);
-    axum::serve(
-        tokio::net::TcpListener::bind(addr).await?,
-        app,
-    )
-    .await?;
+    axum::serve(tokio::net::TcpListener::bind(addr).await?, app).await?;
 
     Ok(())
 }
